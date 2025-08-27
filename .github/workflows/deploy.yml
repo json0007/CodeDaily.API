@@ -1,0 +1,51 @@
+name: Deploy Lambda API
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0'
+
+      - name: Install Lambda Tools
+        run: dotnet tool install -g Amazon.Lambda.Tools
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Create S3 bucket for deployments (ignore if exists)
+        run: |
+          aws s3 mb s3://codedaily-lambda-deployments --region us-east-1 || true
+
+      - name: Build and Deploy Lambda
+        run: |
+          cd src/CodeDaily.API
+          dotnet lambda deploy-serverless \
+            --stack-name codedaily-api \
+            --s3-bucket codedaily-lambda-deployments \
+            --region us-east-1
+
+      - name: Get API Gateway URL
+        run: |
+          API_URL=$(aws cloudformation describe-stacks \
+            --stack-name codedaily-api \
+            --query 'Stacks[0].Outputs[?OutputKey==`ApiURL`].OutputValue' \
+            --output text --region us-east-1)
+          echo "API URL: $API_URL"
+          echo "API_URL=$API_URL" >> $GITHUB_ENV
