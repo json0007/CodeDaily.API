@@ -10,7 +10,7 @@ public class BlogsController : ControllerBase
     [HttpGet]
     public IActionResult Get()
     {
-        return Ok(items.OrderBy(a => a.PublishedDate));
+        return Ok(items.OrderByDescending(a => a.PublishedDate));
     }
 
     [HttpGet("{slug}")]
@@ -33,17 +33,17 @@ public class BlogsController : ControllerBase
             PublishedDate = DateTime.UtcNow.AddDays(-10),
             Tags = new List<string> { "Azure", "Angular", "CI/CD" },
             Slug = "optimizing-azure-static-web-apps",
-            IsFeatured = true,
+            IsFeatured = false,
             ReadTime = 8
         },
         new BlogListItem {
             Id = Guid.NewGuid().ToString(),
             Title = "Reverse Proxy Setup with Nginx on EC2",
             Description = "Step-by-step guide to deploying Dockerized apps behind Nginx.",
-            PublishedDate = DateTime.UtcNow.AddDays(-20),
+            PublishedDate = DateTime.UtcNow.AddDays(-1),
             Tags = new List<string> { "AWS", "Docker", "Nginx" },
             Slug = "reverse-proxy-nginx-ec2",
-            IsFeatured = false,
+            IsFeatured = true,
             ReadTime = 6
         },
         new BlogListItem {
