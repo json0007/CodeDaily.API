@@ -13,10 +13,10 @@ public class BlogsController : ControllerBase
         return Ok(items);
     }
 
-    [HttpGet("{id}")]
-    public IActionResult Get(string id)
+    [HttpGet("{slug}")]
+    public IActionResult Get(string slug)
     {
-        var item = items.FirstOrDefault(i => i.Id == id);
+        var item = items.FirstOrDefault(i => i.Slug == slug);
         if (item == null)
         {
             return NotFound();
