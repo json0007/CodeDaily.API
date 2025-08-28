@@ -10,7 +10,7 @@ public class BlogsController : ControllerBase
     [HttpGet]
     public IActionResult Get()
     {
-        return Ok(items);
+        return Ok(items.OrderBy(a => a.PublishedDate));
     }
 
     [HttpGet("{slug}")]
@@ -63,7 +63,7 @@ public class BlogsController : ControllerBase
             PublishedDate = DateTime.UtcNow.AddDays(-15),
             Tags = new List<string> { "Git", "Version Control", "Best Practices" },
             Slug = "git-rebase-vs-squash",
-            IsFeatured = true,
+            IsFeatured = false,
             ReadTime = 4
         },
         new BlogListItem {
@@ -83,7 +83,7 @@ public class BlogsController : ControllerBase
             PublishedDate = DateTime.UtcNow.AddDays(-35),
             Tags = new List<string> { "Cosmos DB", "MongoDB", "Partitioning" },
             Slug = "cosmos-vs-mongo-partitioning",
-            IsFeatured = true,
+            IsFeatured = false,
             ReadTime = 9
         },
         new BlogListItem {
@@ -103,7 +103,7 @@ public class BlogsController : ControllerBase
             PublishedDate = DateTime.UtcNow.AddDays(-18),
             Tags = new List<string> { "Angular", "Architecture", "Frontend" },
             Slug = "feature-based-angular-architecture",
-            IsFeatured = true,
+            IsFeatured = false,
             ReadTime = 7
         },
         new BlogListItem {
@@ -123,7 +123,7 @@ public class BlogsController : ControllerBase
             PublishedDate = DateTime.UtcNow.AddDays(-5),
             Tags = new List<string> { "Security", "Enterprise", "Code Quality" },
             Slug = "security-hygiene-enterprise-code",
-            IsFeatured = true,
+            IsFeatured = false,
             ReadTime = 10
         }
     };
