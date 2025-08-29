@@ -38,7 +38,7 @@ jobs:
           cd src/CodeDaily.API
           dotnet lambda deploy-serverless \
             --stack-name codedaily-api \
-            --s3-bucket codedaily-lambda-deployments \
+            --s3-bucket codedaily-lambda-deployments-us-east-2 \
             --region us-east-2
 
       - name: Get API Gateway URL
