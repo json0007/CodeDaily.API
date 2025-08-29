@@ -31,7 +31,7 @@ jobs:
 
       - name: Create S3 bucket for deployments (ignore if exists)
         run: |
-          aws s3 mb s3://codedaily-lambda-deployments --region us-east-2 || true
+          aws s3 mb s3://codedaily-lambda-deployments-us-east-2 --region us-east-2 || true
 
       - name: Build and Deploy Lambda
         run: |
