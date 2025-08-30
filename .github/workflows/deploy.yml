@@ -27,25 +27,25 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+          aws-region: us-east-2
 
       - name: Create S3 bucket for deployments (ignore if exists)
         run: |
-          aws s3 mb s3://codedaily-lambda-deployments --region us-east-1 || true
+          aws s3 mb s3://codedaily-lambda-deployments-us-east-2 --region us-east-2 || true
 
       - name: Build and Deploy Lambda
         run: |
           cd src/CodeDaily.API
           dotnet lambda deploy-serverless \
             --stack-name codedaily-api \
-            --s3-bucket codedaily-lambda-deployments \
-            --region us-east-1
+            --s3-bucket codedaily-lambda-deployments-us-east-2 \
+            --region us-east-2
 
       - name: Get API Gateway URL
         run: |
           API_URL=$(aws cloudformation describe-stacks \
             --stack-name codedaily-api \
             --query 'Stacks[0].Outputs[?OutputKey==`ApiURL`].OutputValue' \
-            --output text --region us-east-1)
+            --output text --region us-east-2)
           echo "API URL: $API_URL"
           echo "API_URL=$API_URL" >> $GITHUB_ENV
