@@ -1,4 +1,9 @@
-﻿namespace CodeDaily.API;
+using Amazon.DynamoDBv2;
+using Amazon.DynamoDBv2.DataModel;
+using CodeDaily.API.Infrastructure.Repositories;
+using CodeDaily.API.Repositories;
+
+namespace CodeDaily.API;
 
 public class Startup
 {
@@ -25,9 +30,10 @@ public class Startup
             });
         });
         
-        // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-        services.AddEndpointsApiExplorer();
-        services.AddSwaggerGen();
+        // Register repositories - AWS services configured in entry points
+        services.AddScoped<IBlogPostRepository, DynamoDbBlogPostRepository>();
+        
+      
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline
