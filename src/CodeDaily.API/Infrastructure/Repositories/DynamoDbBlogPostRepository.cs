@@ -36,7 +36,7 @@ public class DynamoDbBlogPostRepository(IDynamoDBContext dynamoDbContext, IAmazo
             Slug = doc["Slug"],
             IsFeatured = doc.ContainsKey("IsFeatured") && doc["IsFeatured"].AsBoolean(),
             ReadTime = doc.ContainsKey("ReadTime") ? doc["ReadTime"].AsInt() : null
-        }).OrderByDescending(doc => doc.Title).ToList();
+        }).OrderByDescending(doc => doc.PublishedDate).ToList();
     }
 
     public async Task<BlogPost?> GetByIdAsync(string id)
