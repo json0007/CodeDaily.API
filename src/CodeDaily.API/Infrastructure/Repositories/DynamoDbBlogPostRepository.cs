@@ -19,7 +19,8 @@ public class DynamoDbBlogPostRepository(IDynamoDBContext dynamoDbContext, IAmazo
             { 
                 "Id", "Title", "Description", "PublishedDate", 
                 "Tags", "Slug", "IsFeatured", "ReadTime" 
-            }
+            },
+            
         };
         
         var search = table.Scan(scanConfig);
@@ -35,7 +36,7 @@ public class DynamoDbBlogPostRepository(IDynamoDBContext dynamoDbContext, IAmazo
             Slug = doc["Slug"],
             IsFeatured = doc.ContainsKey("IsFeatured") && doc["IsFeatured"].AsBoolean(),
             ReadTime = doc.ContainsKey("ReadTime") ? doc["ReadTime"].AsInt() : null
-        });
+        }).OrderByDescending(doc => doc.Title).ToList();
     }
 
     public async Task<BlogPost?> GetByIdAsync(string id)
