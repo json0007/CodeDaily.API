@@ -1,38 +1,30 @@
 name: Deploy Lambda API
-
 on:
   push:
     branches:
       - main
   workflow_dispatch:
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '8.0'
-
       - name: Install Lambda Tools
         run: dotnet tool install -g Amazon.Lambda.Tools
-
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-2
-
       - name: Create S3 bucket for deployments (ignore if exists)
         run: |
           aws s3 mb s3://codedaily-lambda-deployments-us-east-2 --region us-east-2 || true
-
       - name: Build and Deploy Lambda
         run: |
           cd src/CodeDaily.API
@@ -40,7 +32,20 @@ jobs:
             --stack-name codedaily-api \
             --s3-bucket codedaily-lambda-deployments-us-east-2 \
             --region us-east-2
-
+      - name: Clean old deployment artifacts
+        run: |
+          echo "Cleaning old deployment artifacts, keeping only the 3 most recent..."
+          aws s3api list-objects-v2 \
+            --bucket codedaily-lambda-deployments-us-east-2 \
+            --query 'Contents[?contains(Key, `.zip`)].{Key: Key, LastModified: LastModified}' \
+            --output text | \
+          sort -k2 -r | \
+          tail -n +4 | \
+          awk '{print $1}' | \
+          while read key; do
+            echo "Deleting old artifact: $key"
+            aws s3 rm s3://codedaily-lambda-deployments-us-east-2/"$key"
+          done
       - name: Get API Gateway URL
         run: |
           API_URL=$(aws cloudformation describe-stacks \
