@@ -35,17 +35,21 @@ jobs:
       - name: Clean old deployment artifacts
         run: |
           echo "Cleaning old deployment artifacts, keeping only the 3 most recent..."
+          
+          # List all objects, sort by date (newest first), skip first 3, delete the rest
           aws s3api list-objects-v2 \
             --bucket codedaily-lambda-deployments-us-east-2 \
-            --query 'Contents[?contains(Key, `.zip`)].{Key: Key, LastModified: LastModified}' \
-            --output text | \
-          sort -k2 -r | \
-          tail -n +4 | \
-          awk '{print $1}' | \
-          while read key; do
-            echo "Deleting old artifact: $key"
-            aws s3 rm s3://codedaily-lambda-deployments-us-east-2/"$key"
+            --query 'Contents[].{Key: Key, LastModified: LastModified}' \
+            --output json | \
+          jq -r 'sort_by(.LastModified) | reverse | .[3:] | .[].Key' | \
+          while read -r key; do
+            if [ ! -z "$key" ]; then
+              echo "Deleting old artifact: $key"
+              aws s3 rm "s3://codedaily-lambda-deployments-us-east-2/$key"
+            fi
           done
+          
+          echo "Cleanup completed"
       - name: Get API Gateway URL
         run: |
           API_URL=$(aws cloudformation describe-stacks \
