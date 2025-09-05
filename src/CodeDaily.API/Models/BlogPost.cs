@@ -2,30 +2,33 @@ using Amazon.DynamoDBv2.DataModel;
 
 namespace CodeDaily.API.Models;
 
-[DynamoDBTable("blog-posts")]
+[DynamoDBTable("codedaily-blogs-test")]
 public class BlogPost
 {
-    [DynamoDBHashKey]
-    public string Id { get; set; } = default!;
+    [DynamoDBHashKey] // Status is the partition key
+    public string Status { get; set; } = "draft"; // "published" or "draft"
     
-    public string Title { get; set; } = default!;
-    public string Description { get; set; } = default!;
-    
+    [DynamoDBRangeKey] // PublishedDate is the sort key
     public DateTime PublishedDate { get; set; }
     
+    [DynamoDBLocalSecondaryIndexRangeKey("PublishedTitleIndex")]
+    public string Title { get; set; } = default!;
+    
+    public string Description { get; set; } = default!;
     public string Content { get; set; } = default!;
 
-     [DynamoDBGlobalSecondaryIndexHashKey("Tag-PublishedDate-index")]
-    public List<string> Tags { get; set; } = new();
-    
-    [DynamoDBGlobalSecondaryIndexHashKey("Slug-index")]
+    [DynamoDBGlobalSecondaryIndexHashKey("SlugIndex")]
     public string Slug { get; set; } = default!;
     
+    [DynamoDBLocalSecondaryIndexRangeKey("PublishedTagIndex")]
+    public string TagString { get; set; } = default!;
+    
+    [DynamoDBLocalSecondaryIndexRangeKey("DraftAuthorIndex")]
+    public string Author { get; set; } = default!;
+    
+    [DynamoDBIgnore]
+    public string[] Tags => TagString?.Split(",", StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
+    
     public bool IsFeatured { get; set; }
-
-
-    // Optional fields
-    public int? ReadTime { get; set; } // in minutes
-    public string? Author { get; set; } // for future use
+    public int? ReadTime { get; set; }
 }
-

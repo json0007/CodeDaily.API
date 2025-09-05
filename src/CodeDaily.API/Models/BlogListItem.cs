@@ -11,8 +11,9 @@ public class BlogListItem
     public string Description { get; set; } = default!;
     
     public DateTime PublishedDate { get; set; }
-    
-    public List<string> Tags { get; set; } = new();
+
+    public string TagString { get; set; } = default!;
+        public string[] Tags => TagString?.Split(",", StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
     
     public string Slug { get; set; } = default!;
     

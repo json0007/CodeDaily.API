@@ -36,7 +36,7 @@ public class DynamoDbBlogPostRepository(IDynamoDBContext dynamoDbContext, IAmazo
             Title = doc["Title"],
             Description = doc.ContainsKey("Description") ? doc["Description"] : "",
             PublishedDate = doc["PublishedDate"].AsDateTime(),
-            Tags = doc.ContainsKey("Tags") ? doc["Tags"].AsListOfString() : new List<string>(),
+            TagString = doc.ContainsKey("Tags") ? doc["TagsString"] : "",
             Slug = doc["Slug"],
             IsFeatured = doc.ContainsKey("IsFeatured") && doc["IsFeatured"].AsBoolean(),
             ReadTime = doc.ContainsKey("ReadTime") ? doc["ReadTime"].AsInt() : null
@@ -66,12 +66,12 @@ public class DynamoDbBlogPostRepository(IDynamoDBContext dynamoDbContext, IAmazo
 
         return new BlogPost
         {
-            Id = document["Slug"],
+           
             Title = document["Title"],
             Content = document.ContainsKey("Content") ? document["Content"] : "",
             Description = document.ContainsKey("Description") ? document["Description"] : "",
             PublishedDate = document["PublishedDate"].AsDateTime(),
-            Tags = document.ContainsKey("Tags") ? document["Tags"].AsListOfString() : new List<string>(),
+            TagString = document.ContainsKey("Tags") ? document["TagString"] : "",
             Slug = document["Slug"],
             IsFeatured = document.ContainsKey("IsFeatured") && document["IsFeatured"].AsBoolean(),
             ReadTime = document.ContainsKey("ReadTime") ? document["ReadTime"].AsInt() : null
@@ -85,12 +85,7 @@ public class DynamoDbBlogPostRepository(IDynamoDBContext dynamoDbContext, IAmazo
     }
 
     public async Task<BlogPost> CreateAsync(BlogPost blogPost)
-    {
-        if (string.IsNullOrEmpty(blogPost.Id))
-        {
-            blogPost.Id = Guid.NewGuid().ToString();
-        }
-        
+    {      
         await dynamoDbContext.SaveAsync(blogPost);
         return blogPost;
     }
