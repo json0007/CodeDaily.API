@@ -105,26 +105,30 @@ resource "aws_dynamodb_table" "blogs" {
 
   # LSI for searching within published blogs by tag
   local_secondary_index {
-    name      = "PublishedTagIndex"
-    range_key = "TagString"
+    name            = "PublishedTagIndex"
+    range_key       = "TagString"
+    projection_type = "ALL"
   }
 
   # LSI for searching within published blogs by title
   local_secondary_index {
-    name      = "PublishedTitleIndex"
-    range_key = "Title"
+    name            = "PublishedTitleIndex"
+    range_key       = "Title"
+    projection_type = "ALL"
   }
 
   # LSI for searching within draft blogs by author
   local_secondary_index {
-    name      = "DraftAuthorIndex"
-    range_key = "Author"
+    name            = "DraftAuthorIndex"
+    range_key       = "Author"
+    projection_type = "ALL"
   }
 
   # LSI for searching within draft blogs by title
   local_secondary_index {
-    name      = "DraftTitleIndex"
-    range_key = "Title"
+    name            = "DraftTitleIndex"
+    range_key       = "Title"
+    projection_type = "ALL"
   }
 
   tags = {
@@ -155,8 +159,9 @@ resource "aws_dynamodb_table" "templates" {
   }
 
   global_secondary_index {
-    name     = "SlugIndex"
-    hash_key = "Slug"
+    name               = "SlugIndex"
+    hash_key           = "Slug"
+    projection_type    = "ALL"
   }
 
   tags = {
@@ -357,7 +362,7 @@ resource "aws_lambda_permission" "api_gw" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.api.function_name
   principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_api_gateway_rest_api.execution_arn}/*/*"
+  source_arn    = "${aws_api_gateway_rest_api.api.execution_arn}/*/*"
 }
 
 # Outputs
