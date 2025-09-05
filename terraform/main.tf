@@ -98,8 +98,9 @@ resource "aws_dynamodb_table" "blogs" {
 
   # GSI for slug lookup (single blog retrieval regardless of status)
   global_secondary_index {
-    name     = "SlugIndex"
-    hash_key = "Slug"
+    name               = "SlugIndex"
+    hash_key           = "Slug"
+    projection_type    = "ALL"
   }
 
   # LSI for searching within published blogs by tag
