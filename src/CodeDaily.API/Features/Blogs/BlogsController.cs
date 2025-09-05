@@ -9,7 +9,7 @@ public class BlogsController(IBlogPostRepository blogPostRepository) : Controlle
     [HttpGet]
     public async Task<IActionResult> Get()
     {
-        var blogListItems = await blogPostRepository.GetAllAsync();
+        var blogListItems = await blogPostRepository.GetAllPublishedAsync();
         return Ok(blogListItems);
     }
 

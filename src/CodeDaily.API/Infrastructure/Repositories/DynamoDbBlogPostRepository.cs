@@ -9,50 +9,79 @@ namespace CodeDaily.API.Infrastructure.Repositories;
 public class DynamoDbBlogPostRepository(IDynamoDBContext dynamoDbContext, IAmazonDynamoDB dynamoDbClient)
     : IBlogPostRepository
 {
-    public async Task<IEnumerable<BlogListItem>> GetAllAsync()
+    private readonly string _tableName = Environment.GetEnvironmentVariable("BLOGS_TABLE_NAME") ?? "codedaily-blogs-test";
+
+    public async Task<IEnumerable<BlogListItem>> GetAllPublishedAsync()
     {
-        var table = Table.LoadTable(dynamoDbClient, "blog-posts");
-        var scanConfig = new ScanOperationConfig
+        var table = Table.LoadTable(dynamoDbClient, _tableName);
+        
+        // Query for published posts, sorted by PublishedDate (descending)
+        var queryConfig = new QueryOperationConfig
         {
-            Select = SelectValues.SpecificAttributes,
-            AttributesToGet = new List<string> 
-            { 
-                "Id", "Title", "Description", "PublishedDate", 
-                "Tags", "Slug", "IsFeatured", "ReadTime" 
+            KeyExpression = new Expression
+            {
+                ExpressionStatement = "#status = :status",
+                ExpressionAttributeNames = { { "#status", "Status" } },
+                ExpressionAttributeValues = { { ":status", "published" } }
             },
-            
+            BackwardSearch = true // Sort descending by PublishedDate
         };
         
-        var search = table.Scan(scanConfig);
+        var search = table.Query(queryConfig);
         var documents = await search.GetRemainingAsync();
         
         return documents.Select(doc => new BlogListItem
         {
-            Id = doc["Id"],
+            Id = doc["Slug"],
             Title = doc["Title"],
-            Description = doc["Description"],
+            Description = doc.ContainsKey("Description") ? doc["Description"] : "",
             PublishedDate = doc["PublishedDate"].AsDateTime(),
             Tags = doc.ContainsKey("Tags") ? doc["Tags"].AsListOfString() : new List<string>(),
             Slug = doc["Slug"],
             IsFeatured = doc.ContainsKey("IsFeatured") && doc["IsFeatured"].AsBoolean(),
             ReadTime = doc.ContainsKey("ReadTime") ? doc["ReadTime"].AsInt() : null
-        }).OrderByDescending(doc => doc.PublishedDate).ToList();
-    }
-
-    public async Task<BlogPost?> GetByIdAsync(string id)
-    {
-        return await dynamoDbContext.LoadAsync<BlogPost>(id);
+        }).ToList();
     }
 
     public async Task<BlogPost?> GetBySlugAsync(string slug)
     {
-        var scanConditions = new List<ScanCondition>
+        var table = Table.LoadTable(dynamoDbClient, _tableName);
+        
+        // Use SlugIndex GSI to find by slug
+        var queryConfig = new QueryOperationConfig
         {
-            new ScanCondition("Slug", ScanOperator.Equal, slug)
+            IndexName = "SlugIndex",
+            KeyExpression = new Expression
+            {
+                ExpressionStatement = "Slug = :slug",
+                ExpressionAttributeValues = { { ":slug", slug } }
+            }
         };
-        var search = dynamoDbContext.ScanAsync<BlogPost>(scanConditions);
-        var results = await search.GetRemainingAsync();
-        return results.FirstOrDefault();
+        
+        var search = table.Query(queryConfig);
+        var documents = await search.GetRemainingAsync();
+        var document = documents.FirstOrDefault();
+        
+        if (document == null) return null;
+
+        return new BlogPost
+        {
+            Id = document["Slug"],
+            Title = document["Title"],
+            Content = document.ContainsKey("Content") ? document["Content"] : "",
+            Description = document.ContainsKey("Description") ? document["Description"] : "",
+            PublishedDate = document["PublishedDate"].AsDateTime(),
+            Tags = document.ContainsKey("Tags") ? document["Tags"].AsListOfString() : new List<string>(),
+            Slug = document["Slug"],
+            IsFeatured = document.ContainsKey("IsFeatured") && document["IsFeatured"].AsBoolean(),
+            ReadTime = document.ContainsKey("ReadTime") ? document["ReadTime"].AsInt() : null
+        };
+    }
+
+    // Keep your existing create/update/delete methods unchanged for now
+    public async Task<BlogPost?> GetByIdAsync(string id)
+    {
+        return await dynamoDbContext.LoadAsync<BlogPost>(id);
     }
 
     public async Task<BlogPost> CreateAsync(BlogPost blogPost)
