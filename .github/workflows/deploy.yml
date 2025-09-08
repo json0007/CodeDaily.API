@@ -4,7 +4,6 @@ on:
     branches:
       - terraform-test
   workflow_dispatch:
-
 jobs:
   build:
     name: Build Application
