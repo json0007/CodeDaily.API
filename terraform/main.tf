@@ -11,8 +11,8 @@ terraform {
 
   backend "s3" {
     bucket         = "codedaily-terraform-state"
-    key            = "codedaily-api-test/terraform.tfstate"
-    region         = "us-east-1"
+    key            = "codedaily-api/terraform.tfstate"
+    region         = "us-east-2"
     dynamodb_table = "terraform-state-lock"
     encrypt        = true
   }
@@ -22,7 +22,7 @@ terraform {
 variable "region" {
   description = "AWS region"
   type        = string
-  default     = "us-east-1"
+  default     = "us-east-2"
 }
 
 # Provider configuration
@@ -32,7 +32,7 @@ provider "aws" {
 
 # S3 Bucket for Templates
 resource "aws_s3_bucket" "templates" {
-  bucket = "codedaily-templates-test"
+  bucket = "codedaily-templates"
 }
 
 resource "aws_s3_bucket_versioning" "templates" {
@@ -59,76 +59,120 @@ resource "aws_s3_bucket_public_access_block" "templates" {
   restrict_public_buckets = true
 }
 
-# DynamoDB Table - Blogs
+# DynamoDB Table - Single Table Design for Blogs
+#
+# Main Table Access Patterns:
+# - PK = "BLOG#slug", SK = "BLOG#date" → Blog metadata
+# - PK = "BLOG#slug", SK = "TAG#tagname" → Individual tag items for each blog
+#
+# GSI1 Access Patterns (Status):
+# - GSI1_PK = "STATUS#published", GSI1_SK = "date" → All published blogs by date
+# - GSI1_PK = "STATUS#draft", GSI1_SK = "date" → All draft blogs by date
+#
+# GSI2 Access Patterns (Author):
+# - GSI2_PK = "AUTHOR#author-name", GSI2_SK = "date" → All blogs by specific author
+#
+# GSI3 Access Patterns (Tags):
+# - GSI3_PK = "TAG#javascript", GSI3_SK = "BLOG#date" → All blogs with specific tag
+#
 resource "aws_dynamodb_table" "blogs" {
-  name         = "codedaily-blogs-test"
+  name         = "codedaily-blogs"
   billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "Status"
-  range_key    = "PublishedDate"
+  hash_key     = "PK"    # Partition key - BLOG#slug
+  range_key    = "SK"    # Sort key - BLOG#date or TAG#tagname
 
+  # Base table attributes
   attribute {
-    name = "Status"
+    name = "PK"          # Primary partition key (BLOG#slug)
     type = "S"
   }
 
   attribute {
-    name = "PublishedDate"
+    name = "SK"          # Primary sort key (BLOG#date or TAG#tagname)
+    type = "S"
+  }
+
+  # GSI1 attributes - for status-based queries (published/draft)
+  attribute {
+    name = "GSI1_PK"     # STATUS
     type = "S"
   }
 
   attribute {
-    name = "Slug"
+    name = "GSI1_SK"     # PublishedDate or CreatedDate
+    type = "S"
+  }
+
+  # GSI2 attributes - for author-based queries
+  attribute {
+    name = "GSI2_PK"     # AUTHOR#author-name
     type = "S"
   }
 
   attribute {
-    name = "Author"
+    name = "GSI2_SK"     # PublishedDate or CreatedDate for sorting
+    type = "S"
+  }
+
+  # GSI3 attributes - for title-based queries
+  attribute {
+    name = "GSI3_PK"     # TITLE#title
     type = "S"
   }
 
   attribute {
-    name = "TagString"
+    name = "GSI3_SK"     # PublishedDate or CreatedDate for sorting
+    type = "S"
+  }
+
+  # GSI4 attributes - for tag-based queries
+  attribute {
+    name = "GSI4_PK"     # TAG#tagname
     type = "S"
   }
 
   attribute {
-    name = "Title"
+    name = "GSI4_SK"     # BLOG#date for sorting (from BlogTag items)
     type = "S"
   }
 
-  # GSI for slug lookup (single blog retrieval regardless of status)
+  # GSI1 - Query blogs by status (published/draft), sorted by date
+  # Excludes Content to optimize for list queries
   global_secondary_index {
-    name               = "SlugIndex"
-    hash_key           = "Slug"
-    projection_type    = "ALL"
+    name               = "StatusDateIndex"
+    hash_key           = "GSI1_PK"     # STATUS#published
+    range_key          = "GSI1_SK"     # PublishedDate or CreatedDate
+    projection_type    = "INCLUDE"     # Include specific attributes (not Content)
+    non_key_attributes = ["Slug", "Title", "Description", "Author", "Status", "CreatedDate", "PublishedDate", "Tags", "IsFeatured", "ReadTime"]
   }
 
-  # LSI for searching within published blogs by tag
-  local_secondary_index {
-    name            = "PublishedTagIndex"
-    range_key       = "TagString"
-    projection_type = "ALL"
+  # GSI2 - Query blogs by author, sorted by date
+  # Excludes Content to optimize for list queries
+  global_secondary_index {
+    name               = "AuthorDateIndex"
+    hash_key           = "GSI2_PK"     # AUTHOR#john-doe
+    range_key          = "GSI2_SK"     # PublishedDate or CreatedDate
+    projection_type    = "INCLUDE"     # Include specific attributes (not Content)
+    non_key_attributes = ["Slug", "Title", "Description", "Author", "Status", "CreatedDate", "PublishedDate", "Tags", "IsFeatured", "ReadTime"]
   }
 
-  # LSI for searching within published blogs by title
-  local_secondary_index {
-    name            = "PublishedTitleIndex"
-    range_key       = "Title"
-    projection_type = "ALL"
+  # GSI3 - Query blogs by author, sorted by date
+  # Excludes Content to optimize for list queries
+  global_secondary_index {
+    name               = "TitleDateIndex"
+    hash_key           = "GSI3_PK"     # TITLE#some-title
+    range_key          = "GSI3_SK"     # PublishedDate or CreatedDate
+    projection_type    = "INCLUDE"     # Include specific attributes (not Content)
+    non_key_attributes = ["Slug", "Title", "Description", "Author", "Status", "CreatedDate", "PublishedDate", "Tags", "IsFeatured", "ReadTime"]
   }
 
-  # LSI for searching within draft blogs by author
-  local_secondary_index {
-    name            = "DraftAuthorIndex"
-    range_key       = "Author"
-    projection_type = "ALL"
-  }
-
-  # LSI for searching within draft blogs by title
-  local_secondary_index {
-    name            = "DraftTitleIndex"
-    range_key       = "Title"
-    projection_type = "ALL"
+  # GSI4 - Query blogs by tag, sorted by date
+  # Only needs minimal attributes since BlogTag items are lightweight
+  global_secondary_index {
+    name               = "TagDateIndex"
+    hash_key           = "GSI4_PK"     # TAG#javascript
+    range_key          = "GSI4_SK"     # BLOG#date
+    projection_type    = "KEYS_ONLY"   # BlogTag items only need the keys
   }
 
   tags = {
@@ -138,13 +182,18 @@ resource "aws_dynamodb_table" "blogs" {
 
 # DynamoDB Table - Templates
 resource "aws_dynamodb_table" "templates" {
-  name         = "codedaily-templates-test"
+  name         = "codedaily-templates"
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "TemplateType"
   range_key    = "CreatedDate"
 
   attribute {
     name = "TemplateType"
+    type = "S"
+  }
+
+  attribute {
+    name = "Title"
     type = "S"
   }
 
@@ -171,7 +220,7 @@ resource "aws_dynamodb_table" "templates" {
 
 # IAM Role for Lambda
 resource "aws_iam_role" "lambda_role" {
-  name = "codedaily-api-lambda-role-test"
+  name = "codedaily-api-lambda-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -193,7 +242,7 @@ resource "aws_iam_role" "lambda_role" {
 
 # IAM Policy for DynamoDB and S3 access
 resource "aws_iam_policy" "lambda_policy" {
-  name = "codedaily-api-lambda-policy-test"
+  name = "codedaily-api-lambda-policy"
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -220,7 +269,7 @@ resource "aws_iam_policy" "lambda_policy" {
         Effect = "Allow"
         Action = [
           "s3:GetObject",
-          "s3:PutObject",
+          "s3:PutItem",
           "s3:DeleteObject",
           "s3:ListBucket"
         ]
@@ -250,7 +299,7 @@ resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
 
 # Lambda Function
 resource "aws_lambda_function" "api" {
-  function_name = "CodeDaily-API-Test"
+  function_name = "CodeDaily-API"
   role          = aws_iam_role.lambda_role.arn
   handler       = "CodeDaily.API::CodeDaily.API.LambdaEntryPoint::FunctionHandlerAsync"
   runtime       = "dotnet8"
@@ -291,8 +340,8 @@ data "archive_file" "placeholder" {
 
 # API Gateway
 resource "aws_api_gateway_rest_api" "api" {
-  name        = "codedaily-api-test"
-  description = "CodeDaily API Gateway - Test"
+  name        = "codedaily-api"
+  description = "CodeDaily API Gateway"
 
   endpoint_configuration {
     types = ["REGIONAL"]

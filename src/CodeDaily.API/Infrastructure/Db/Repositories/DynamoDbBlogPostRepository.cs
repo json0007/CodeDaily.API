@@ -13,7 +13,7 @@ public class DynamoDbBlogPostRepository(IDynamoDBContext dynamoDbContext, IAmazo
 
     public async Task<IEnumerable<BlogListItem>> GetAllPublishedAsync()
     {
-        var table = Table.LoadTable(dynamoDbClient, _tableName);
+        var table = new TableBuilder(dynamoDbClient, _tableName).Build();
         
         // Query for published posts, sorted by PublishedDate (descending)
         var queryConfig = new QueryOperationConfig
@@ -45,7 +45,7 @@ public class DynamoDbBlogPostRepository(IDynamoDBContext dynamoDbContext, IAmazo
 
     public async Task<BlogPost?> GetBySlugAsync(string slug)
     {
-        var table = Table.LoadTable(dynamoDbClient, _tableName);
+        var table = new TableBuilder(dynamoDbClient, _tableName).Build();
         
         // Use SlugIndex GSI to find by slug
         var queryConfig = new QueryOperationConfig
@@ -64,18 +64,7 @@ public class DynamoDbBlogPostRepository(IDynamoDBContext dynamoDbContext, IAmazo
         
         if (document == null) return null;
 
-        return new BlogPost
-        {
-           
-            Title = document["Title"],
-            Content = document.ContainsKey("Content") ? document["Content"] : "",
-            Description = document.ContainsKey("Description") ? document["Description"] : "",
-            PublishedDate = document["PublishedDate"].AsDateTime(),
-            TagString = document.ContainsKey("Tags") ? document["TagString"] : "",
-            Slug = document["Slug"],
-            IsFeatured = document.ContainsKey("IsFeatured") && document["IsFeatured"].AsBoolean(),
-            ReadTime = document.ContainsKey("ReadTime") ? document["ReadTime"].AsInt() : null
-        };
+        return dynamoDbContext.FromDocument<BlogPost>(document);
     }
 
     // Keep your existing create/update/delete methods unchanged for now
