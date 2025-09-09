@@ -222,9 +222,7 @@ resource "aws_iam_policy" "lambda_policy" {
         ]
         Resource = [
           aws_dynamodb_table.blogs.arn,
-          "${aws_dynamodb_table.blogs.arn}/index/*",
-          aws_dynamodb_table.templates.arn,
-          "${aws_dynamodb_table.templates.arn}/index/*"
+          "${aws_dynamodb_table.blogs.arn}/index/*"
         ]
       },
       {
@@ -435,11 +433,6 @@ output "api_gateway_url" {
 output "blogs_table_name" {
   description = "Name of the blogs DynamoDB table"
   value       = aws_dynamodb_table.blogs.name
-}
-
-output "templates_table_name" {
-  description = "Name of the templates DynamoDB table"
-  value       = aws_dynamodb_table.templates.name
 }
 
 output "templates_bucket_name" {
