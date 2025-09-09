@@ -273,7 +273,6 @@ resource "aws_lambda_function" "api" {
   environment {
     variables = {
       BLOGS_TABLE_NAME      = aws_dynamodb_table.blogs.name
-      TEMPLATES_TABLE_NAME  = aws_dynamodb_table.templates.name
       TEMPLATES_BUCKET_NAME = aws_s3_bucket.templates.bucket
     }
   }
