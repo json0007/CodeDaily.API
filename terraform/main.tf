@@ -10,7 +10,7 @@ terraform {
   }
 
   backend "s3" {
-    bucket         = "codedaily-terraform-state"
+    bucket         = "codedaily-terraform-state-east-2"
     key            = "codedaily-api/terraform.tfstate"
     region         = "us-east-2"
     dynamodb_table = "terraform-state-lock"
