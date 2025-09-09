@@ -180,44 +180,6 @@ resource "aws_dynamodb_table" "blogs" {
   }
 }
 
-# DynamoDB Table - Templates
-resource "aws_dynamodb_table" "templates" {
-  name         = "codedaily-templates"
-  billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "TemplateType"
-  range_key    = "CreatedDate"
-
-  attribute {
-    name = "TemplateType"
-    type = "S"
-  }
-
-  attribute {
-    name = "Title"
-    type = "S"
-  }
-
-  attribute {
-    name = "CreatedDate"
-    type = "S"
-  }
-
-  attribute {
-    name = "Slug"
-    type = "S"
-  }
-
-  global_secondary_index {
-    name               = "SlugIndex"
-    hash_key           = "Slug"
-    projection_type    = "ALL"
-  }
-
-  tags = {
-    Project = "CodeDaily"
-  }
-}
-
 # IAM Role for Lambda
 resource "aws_iam_role" "lambda_role" {
   name = "codedaily-api-lambda-role"
