@@ -1,4 +1,5 @@
 using Amazon.DynamoDBv2.DataModel;
+using CodeDaily.API.Constants;
 
 namespace CodeDaily.API.Models;
 
@@ -17,7 +18,7 @@ public class BlogPost
     public string Description { get; set; } = default!;
     public string Content { get; set; } = default!;
     public string Author { get; set; } = default!;
-    public string Status { get; set; } = "draft"; // "published" or "draft"
+    public string Status { get; set; } = BlogPostStatus.Draft;
     public DateTime CreatedDate { get; set; }
     public DateTime? PublishedDate { get; set; }
     public List<string> Tags { get; set; } = new();
@@ -49,7 +50,7 @@ public class BlogPost
         PK = $"BLOG#{Slug}";
 
         // Use PublishedDate if published, otherwise CreatedDate
-        var sortDate = Status == "published" && PublishedDate.HasValue
+        var sortDate = Status == BlogPostStatus.Published && PublishedDate.HasValue
             ? PublishedDate.Value
             : CreatedDate;
 
@@ -84,7 +85,7 @@ public class BlogTag()
     
     public static BlogTag FromBlogPost(BlogPost blog, string tagName)
     {
-        var sortDate = blog.Status == "published" && blog.PublishedDate.HasValue 
+        var sortDate = blog.Status == BlogPostStatus.Published && blog.PublishedDate.HasValue 
             ? blog.PublishedDate.Value 
             : blog.CreatedDate;
             

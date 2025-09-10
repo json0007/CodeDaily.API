@@ -1,8 +1,6 @@
-using Amazon.DynamoDBv2.DataModel;
-
 namespace CodeDaily.API.Models;
 
-public class BlogListItem
+public class BlogMetadata
 {
     public string Id { get; set; } = default!;
     
@@ -13,7 +11,7 @@ public class BlogListItem
     public DateTime PublishedDate { get; set; }
 
     public string TagString { get; set; } = default!;
-        public string[] Tags => TagString?.Split(",", StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
+    public string[] Tags => TagString?.Split(",", StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
     
     public string Slug { get; set; } = default!;
     

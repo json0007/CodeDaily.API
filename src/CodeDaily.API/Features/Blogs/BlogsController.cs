@@ -1,4 +1,5 @@
-﻿using CodeDaily.API.Repositories;
+﻿using CodeDaily.API.Models;
+using CodeDaily.API.Repositories;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CodeDaily.API.Features.Blogs;
@@ -23,4 +24,26 @@ public class BlogsController(IBlogPostRepository blogPostRepository) : Controlle
         }
         return Ok(blogPost);
     }
+
+    // [HttpPost]
+    // public async Task<IActionResult> Post([FromBody] BlogPostCommand command)
+    // {
+    //     var blogPost = new BlogPost
+    //     {
+    //         Slug = command.Slug,
+    //         Title = command.Title,
+    //         Description = command.Description,
+    //         Content = command.Content,
+    //         Author = command.Author,
+    //         Status = command.Status,
+    //         CreatedDate = command.CreatedDate,
+    //         PublishedDate = command.PublishedDate,
+    //         Tags = command.Tags,
+    //         IsFeatured = command.IsFeatured,
+    //         ReadTime = command.ReadTime
+    //     };
+
+    //     var createdBlogPost = await blogPostRepository.CreateAsync(blogPost);
+    //     return CreatedAtAction(nameof(Get), new { slug = createdBlogPost.Slug }, createdBlogPost);
+    // }
 }
