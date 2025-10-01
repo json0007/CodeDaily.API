@@ -1,16 +1,16 @@
-﻿using CodeDaily.API.Models;
-using CodeDaily.API.Repositories;
+﻿using CodeDaily.API.Constants;
+using CodeDaily.API.Domain.Abstraction;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CodeDaily.API.Features.Blogs;
 
 [Route("api/[controller]")]
-public class BlogsController(IBlogPostRepository blogPostRepository) : ControllerBase
+public class BlogsController(IBlogRepository blogPostRepository) : ControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> Get()
+    public async Task<IActionResult> GetAll()
     {
-        var blogListItems = await blogPostRepository.GetAllPublishedAsync();
+        var blogListItems = await blogPostRepository.GetAllByStatusAsync(BlogStatus.Published);
         return Ok(blogListItems);
     }
 

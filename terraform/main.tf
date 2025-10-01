@@ -58,124 +58,47 @@ resource "aws_s3_bucket_public_access_block" "templates" {
   ignore_public_acls      = true
   restrict_public_buckets = true
 }
-
-# DynamoDB Table - Single Table Design for Blogs
-#
-# Main Table Access Patterns:
-# - PK = "BLOG#slug", SK = "BLOG#date" → Blog metadata
-# - PK = "BLOG#slug", SK = "TAG#tagname" → Individual tag items for each blog
-#
-# GSI1 Access Patterns (Status):
-# - GSI1_PK = "STATUS#published", GSI1_SK = "date" → All published blogs by date
-# - GSI1_PK = "STATUS#draft", GSI1_SK = "date" → All draft blogs by date
-#
-# GSI2 Access Patterns (Author):
-# - GSI2_PK = "AUTHOR#author-name", GSI2_SK = "date" → All blogs by specific author
-#
-# GSI3 Access Patterns (Tags):
-# - GSI3_PK = "TAG#javascript", GSI3_SK = "BLOG#date" → All blogs with specific tag
-#
 resource "aws_dynamodb_table" "blogs" {
-  name         = "codedaily-blogs"
-  billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "PK"    # Partition key - BLOG#slug
-  range_key    = "SK"    # Sort key - BLOG#date or TAG#tagname
-
-  # Base table attributes
+  name           = "codedaily-blogs"
+  billing_mode   = "PAY_PER_REQUEST" # or "PROVISIONED" with read/write capacity
+  hash_key       = "PK"
   attribute {
-    name = "PK"          # Primary partition key (BLOG#slug)
+    name = "PK"
     type = "S"
   }
 
   attribute {
-    name = "SK"          # Primary sort key (BLOG#date or TAG#tagname)
-    type = "S"
-  }
-
-  # GSI1 attributes - for status-based queries (published/draft)
-  attribute {
-    name = "GSI1_PK"     # STATUS
+    name = "Status"
     type = "S"
   }
 
   attribute {
-    name = "GSI1_SK"     # PublishedDate or CreatedDate
-    type = "S"
-  }
-
-  # GSI2 attributes - for author-based queries
-  attribute {
-    name = "GSI2_PK"     # AUTHOR#author-name
+    name = "Slug"
     type = "S"
   }
 
   attribute {
-    name = "GSI2_SK"     # PublishedDate or CreatedDate for sorting
+    name = "SortDate"
     type = "S"
   }
 
-  # GSI3 attributes - for title-based queries
-  attribute {
-    name = "GSI3_PK"     # TITLE#title
-    type = "S"
-  }
-
-  attribute {
-    name = "GSI3_SK"     # PublishedDate or CreatedDate for sorting
-    type = "S"
-  }
-
-  # GSI4 attributes - for tag-based queries
-  attribute {
-    name = "GSI4_PK"     # TAG#tagname
-    type = "S"
-  }
-
-  attribute {
-    name = "GSI4_SK"     # BLOG#date for sorting (from BlogTag items)
-    type = "S"
-  }
-
-  # GSI1 - Query blogs by status (published/draft), sorted by date
-  # Excludes Content to optimize for list queries
+  # GSI for querying by status and sorting by date
   global_secondary_index {
-    name               = "StatusDateIndex"
-    hash_key           = "GSI1_PK"     # STATUS#published
-    range_key          = "GSI1_SK"     # PublishedDate or CreatedDate
-    projection_type    = "INCLUDE"     # Include specific attributes (not Content)
-    non_key_attributes = ["Slug", "Title", "Description", "Author", "Status", "CreatedDate", "PublishedDate", "Tags", "IsFeatured", "ReadTime"]
+    name            = "StatusDateIndex"
+    hash_key        = "Status"
+    range_key       = "SortDate"
+    projection_type = "ALL"
   }
 
-  # GSI2 - Query blogs by author, sorted by date
-  # Excludes Content to optimize for list queries
+  # GSI for slug-based lookups
   global_secondary_index {
-    name               = "AuthorDateIndex"
-    hash_key           = "GSI2_PK"     # AUTHOR#john-doe
-    range_key          = "GSI2_SK"     # PublishedDate or CreatedDate
-    projection_type    = "INCLUDE"     # Include specific attributes (not Content)
-    non_key_attributes = ["Slug", "Title", "Description", "Author", "Status", "CreatedDate", "PublishedDate", "Tags", "IsFeatured", "ReadTime"]
-  }
-
-  # GSI3 - Query blogs by author, sorted by date
-  # Excludes Content to optimize for list queries
-  global_secondary_index {
-    name               = "TitleDateIndex"
-    hash_key           = "GSI3_PK"     # TITLE#some-title
-    range_key          = "GSI3_SK"     # PublishedDate or CreatedDate
-    projection_type    = "INCLUDE"     # Include specific attributes (not Content)
-    non_key_attributes = ["Slug", "Title", "Description", "Author", "Status", "CreatedDate", "PublishedDate", "Tags", "IsFeatured", "ReadTime"]
-  }
-
-  # GSI4 - Query blogs by tag, sorted by date
-  # Only needs minimal attributes since BlogTag items are lightweight
-  global_secondary_index {
-    name               = "TagDateIndex"
-    hash_key           = "GSI4_PK"     # TAG#javascript
-    range_key          = "GSI4_SK"     # BLOG#date
-    projection_type    = "KEYS_ONLY"   # BlogTag items only need the keys
+    name            = "SlugIndex"
+    hash_key        = "Slug"
+    projection_type = "ALL"
   }
 
   tags = {
+    Name    = "blogs"
     Project = "CodeDaily"
   }
 }

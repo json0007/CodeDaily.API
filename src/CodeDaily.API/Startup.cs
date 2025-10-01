@@ -1,7 +1,6 @@
-using Amazon.DynamoDBv2;
-using Amazon.DynamoDBv2.DataModel;
-using CodeDaily.API.Infrastructure.Repositories;
-using CodeDaily.API.Repositories;
+using CodeDaily.API.Domain.Abstraction;
+using CodeDaily.API.Infrastructure.Db.Repositories;
+
 
 namespace CodeDaily.API;
 
@@ -31,7 +30,7 @@ public class Startup
         });
         
         // Register repositories - AWS services configured in entry points
-        services.AddScoped<IBlogPostRepository, DynamoDbBlogPostRepository>();
+        services.AddScoped<IBlogRepository, DynamoDbBlogRepository>();
         
       
     }
