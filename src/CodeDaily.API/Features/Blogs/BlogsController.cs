@@ -1,5 +1,6 @@
 ﻿using CodeDaily.API.Constants;
 using CodeDaily.API.Domain.Abstraction;
+using CodeDaily.Domain.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CodeDaily.API.Features.Blogs;
@@ -26,9 +27,9 @@ public class BlogsController(IBlogRepository blogPostRepository) : ControllerBas
     }
 
     // [HttpPost]
-    // public async Task<IActionResult> Post([FromBody] BlogPostCommand command)
+    // public async Task<IActionResult> Post([FromBody] CreateBlogCommand command)
     // {
-    //     var blogPost = new BlogPost
+    //     var blogPost = new Blog
     //     {
     //         Slug = command.Slug,
     //         Title = command.Title,
@@ -36,14 +37,14 @@ public class BlogsController(IBlogRepository blogPostRepository) : ControllerBas
     //         Content = command.Content,
     //         Author = command.Author,
     //         Status = command.Status,
-    //         CreatedDate = command.CreatedDate,
-    //         PublishedDate = command.PublishedDate,
+    //         CreatedDate = DateTime.UtcNow,
+    //         PublishedDate = command.Status == BlogStatus.Published ? DateTime.UtcNow : null,
     //         Tags = command.Tags,
     //         IsFeatured = command.IsFeatured,
     //         ReadTime = command.ReadTime
     //     };
 
-    //     var createdBlogPost = await blogPostRepository.CreateAsync(blogPost);
-    //     return CreatedAtAction(nameof(Get), new { slug = createdBlogPost.Slug }, createdBlogPost);
+    //     await blogPostRepository.CreateAsync(blogPost);
+    //     return NoContent();
     // }
 }

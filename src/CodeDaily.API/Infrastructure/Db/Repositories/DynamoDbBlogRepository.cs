@@ -74,13 +74,17 @@ public class DynamoDbBlogRepository : IBlogRepository
             IndexName = "StatusDateIndex",
             Select = SelectValues.SpecificAttributes,
             AttributesToGet = new List<string>
-            {   
+            {
                 "PK", "Status", "Slug", "Title", "Description", "Tags", "Author",
                 "CreatedDate", "PublishedDate", "SortDate", "IsFeatured", "ReadTime"
             },
             KeyExpression = new Expression
             {
-                ExpressionStatement = "Status = :status",
+                ExpressionStatement = "#status = :status",
+                ExpressionAttributeNames = new Dictionary<string, string>
+                {
+                    { "#status", "Status" }
+                },
                 ExpressionAttributeValues = new Dictionary<string, DynamoDBEntry>
                 {
                     { ":status", status }
