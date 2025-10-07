@@ -7,22 +7,14 @@ using CodeDaily.Domain.Models;
 
 namespace CodeDaily.API.Infrastructure.Db.Repositories;
 
-
-public class DynamoDbBlogRepository : IBlogRepository
+public class DynamoDbBlogRepository(IDynamoDBContext dynamoDbContext) : IBlogRepository
 {
-    private readonly IDynamoDBContext _dynamoDbContext;
-
-    public DynamoDbBlogRepository(IDynamoDBContext dynamoDbContext)
-    {
-        _dynamoDbContext = dynamoDbContext;
-    }
-
     /// <summary>
     /// Get a blog post by ID
     /// </summary>
     public async Task<Blog?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
     {
-        var dynamoDbBlog = await _dynamoDbContext.LoadAsync<DynamoDbBlog>(id, cancellationToken);
+        var dynamoDbBlog = await dynamoDbContext.LoadAsync<DynamoDbBlog>(id, cancellationToken);
         
         if (dynamoDbBlog == null)
         {
@@ -51,7 +43,7 @@ public class DynamoDbBlogRepository : IBlogRepository
             }
         };
         
-        var search = _dynamoDbContext.FromQueryAsync<DynamoDbBlog>(config);
+        var search = dynamoDbContext.FromQueryAsync<DynamoDbBlog>(config);
         var results = await search.GetRemainingAsync(cancellationToken);
         
         if (results.Count == 0)
@@ -65,7 +57,7 @@ public class DynamoDbBlogRepository : IBlogRepository
     /// <summary>
     /// Get all blog posts by status, sorted by date (newest first)
     /// </summary>
-    public async Task<List<BlogMetadata>> GetAllByStatusAsync(
+    public async Task<List<BlogMetadata>> GetByStatusAsync(
         string status,
         CancellationToken cancellationToken = default)
     {
@@ -93,7 +85,7 @@ public class DynamoDbBlogRepository : IBlogRepository
             BackwardSearch = true // Newest first
         };
         
-        var search = _dynamoDbContext.FromQueryAsync<DynamoDbBlog>(config);
+        var search = dynamoDbContext.FromQueryAsync<DynamoDbBlog>(config);
         var results = await search.GetRemainingAsync(cancellationToken);
         
         return results.Select(MapToBlogMetadata).ToList();
@@ -143,7 +135,7 @@ public class DynamoDbBlogRepository : IBlogRepository
             ReadTime = blogPost.ReadTime
         };
 
-        await _dynamoDbContext.SaveAsync(dynamoDbBlog, cancellationToken);
+        await dynamoDbContext.SaveAsync(dynamoDbBlog, cancellationToken);
     }
 
     /// <summary>
@@ -183,7 +175,7 @@ public class DynamoDbBlogRepository : IBlogRepository
             ReadTime = blogPost.ReadTime
         };
 
-        await _dynamoDbContext.SaveAsync(dynamoDbBlog, cancellationToken);
+        await dynamoDbContext.SaveAsync(dynamoDbBlog, cancellationToken);
     }
 
     /// <summary>
@@ -191,7 +183,7 @@ public class DynamoDbBlogRepository : IBlogRepository
     /// </summary>
     public async Task DeleteAsync(string id, CancellationToken cancellationToken = default)
     {
-        await _dynamoDbContext.DeleteAsync<DynamoDbBlog>(id, cancellationToken);
+        await dynamoDbContext.DeleteAsync<DynamoDbBlog>(id, cancellationToken);
     }
 
     private static Blog MapToBlog(DynamoDbBlog dynamoDbBlog)

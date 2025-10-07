@@ -1,6 +1,9 @@
-using CodeDaily.API.Constants;
-
 namespace CodeDaily.API.Features.Blogs;
+
+public class UpdateBlogCommand : CreateBlogCommand
+{
+    public string Id { get; set; } = default!;
+}
 
 public class CreateBlogCommand
 {
