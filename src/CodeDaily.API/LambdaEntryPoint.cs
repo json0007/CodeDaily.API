@@ -1,5 +1,5 @@
-using Amazon.DynamoDBv2;
-using Amazon.DynamoDBv2.DataModel;
+using CodeDaily.API.Domain.Abstraction;
+using CodeDaily.API.Infrastructure.Db.Repositories;
 
 namespace CodeDaily.API;
 
@@ -34,9 +34,8 @@ public class LambdaEntryPoint :
         builder
             .ConfigureServices(services =>
             {
-                // Configure AWS services for Lambda (uses IAM roles)
-                services.AddAWSService<IAmazonDynamoDB>();
-                services.AddTransient<IDynamoDBContext, DynamoDBContext>();
+                // Use DynamoDB user repository for production
+                services.AddScoped<IUserRepository, DynamoDbUserRepository>();
             })
             .UseStartup<Startup>();
     }

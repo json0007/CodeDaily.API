@@ -103,6 +103,34 @@ resource "aws_dynamodb_table" "blogs" {
   }
 }
 
+resource "aws_dynamodb_table" "users" {
+  name         = "codedaily-users"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "PK"
+
+  attribute {
+    name = "PK"
+    type = "S"
+  }
+
+  attribute {
+    name = "Email"
+    type = "S"
+  }
+
+  # GSI for email-based lookups
+  global_secondary_index {
+    name            = "EmailIndex"
+    hash_key        = "Email"
+    projection_type = "ALL"
+  }
+
+  tags = {
+    Name    = "users"
+    Project = "CodeDaily"
+  }
+}
+
 # IAM Role for Lambda
 resource "aws_iam_role" "lambda_role" {
   name = "codedaily-api-lambda-role"
@@ -119,6 +147,49 @@ resource "aws_iam_role" "lambda_role" {
       }
     ]
   })
+
+  tags = {
+    Project = "CodeDaily"
+  }
+}
+
+# SSM Parameters for JWT Configuration
+resource "aws_ssm_parameter" "jwt_private_key" {
+  name  = "/codedaily/jwt/private-key"
+  type  = "SecureString"
+  value = "placeholder-private-key"
+
+  lifecycle {
+    ignore_changes = [value]
+  }
+
+  tags = {
+    Project = "CodeDaily"
+  }
+}
+
+resource "aws_ssm_parameter" "jwt_public_key" {
+  name  = "/codedaily/jwt/public-key"
+  type  = "SecureString"
+  value = "placeholder-public-key"
+
+  lifecycle {
+    ignore_changes = [value]
+  }
+
+  tags = {
+    Project = "CodeDaily"
+  }
+}
+
+resource "aws_ssm_parameter" "jwt_expiration" {
+  name  = "/codedaily/jwt/expiration"
+  type  = "String"
+  value = "3600"
+
+  lifecycle {
+    ignore_changes = [value]
+  }
 
   tags = {
     Project = "CodeDaily"
@@ -145,7 +216,9 @@ resource "aws_iam_policy" "lambda_policy" {
         ]
         Resource = [
           aws_dynamodb_table.blogs.arn,
-          "${aws_dynamodb_table.blogs.arn}/index/*"
+          "${aws_dynamodb_table.blogs.arn}/index/*",
+          aws_dynamodb_table.users.arn,
+          "${aws_dynamodb_table.users.arn}/index/*"
         ]
       },
       {
@@ -159,6 +232,18 @@ resource "aws_iam_policy" "lambda_policy" {
         Resource = [
           aws_s3_bucket.templates.arn,
           "${aws_s3_bucket.templates.arn}/*"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ssm:GetParameter",
+          "ssm:GetParameters"
+        ]
+        Resource = [
+          aws_ssm_parameter.jwt_private_key.arn,
+          aws_ssm_parameter.jwt_public_key.arn,
+          aws_ssm_parameter.jwt_expiration.arn
         ]
       }
     ]
@@ -196,6 +281,7 @@ resource "aws_lambda_function" "api" {
   environment {
     variables = {
       BLOGS_TABLE_NAME      = aws_dynamodb_table.blogs.name
+      USERS_TABLE_NAME      = aws_dynamodb_table.users.name
       TEMPLATES_BUCKET_NAME = aws_s3_bucket.templates.bucket
     }
   }
@@ -355,6 +441,11 @@ output "api_gateway_url" {
 output "blogs_table_name" {
   description = "Name of the blogs DynamoDB table"
   value       = aws_dynamodb_table.blogs.name
+}
+
+output "users_table_name" {
+  description = "Name of the users DynamoDB table"
+  value       = aws_dynamodb_table.users.name
 }
 
 output "templates_bucket_name" {
