@@ -1,6 +1,4 @@
-﻿using CodeDaily.API.Domain.Abstraction;
-using CodeDaily.API.Features.Auth;
-using CodeDaily.API.Infrastructure.Db.Repositories;
+﻿using CodeDaily.API.Features.Auth;
 using Microsoft.OpenApi.Models;
 
 namespace CodeDaily.API;
@@ -57,9 +55,6 @@ public class LocalEntryPoint
                 });
 
                 services.AddDefaultAWSOptions(context.Configuration.GetAWSOptions());
-
-                // Use in-memory user repository for local development
-                services.AddScoped<IUserRepository, InMemoryUserRepository>();
 
                 // Configure JWT from appsettings.json for local development
                 var jwtSection = context.Configuration.GetSection("Jwt");

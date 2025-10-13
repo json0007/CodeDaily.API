@@ -7,25 +7,23 @@ using Microsoft.AspNetCore.Mvc;
 namespace CodeDaily.API.Features.Blogs;
 
 [Authorize(AuthenticationSchemes = "Bearer")]
-[Route("api/admin/Blogs")]
-#pragma warning disable CS9113 // Parameter is unread.
+[Route("api/admin/blogs")]
 
 public class BlogAdminController(IBlogRepository blogPostRepository) : ControllerBase
-#pragma warning restore CS9113 // Parameter is unread.
 
 {
-    [HttpGet("by-status/{status}")]
+    [HttpGet("{status}")]
     public async Task<IActionResult> GetByStatus(string status)
     {
         var blogListItems = await blogPostRepository.GetByStatusAsync(status);
         return Ok(blogListItems);
     }
     
-    [HttpGet("{id}")]
-    public async Task<IActionResult> Get(string id)
+    [HttpGet("/{status}/{id}")]
+    public async Task<IActionResult> Get(string status, string id)
     {
         var blogPost = await blogPostRepository.GetByIdAsync(id);
-        if (blogPost == null)
+        if (blogPost == null && blogPost?.Status != status)
         {
             return NotFound();
         }
@@ -51,8 +49,8 @@ public class BlogAdminController(IBlogRepository blogPostRepository) : Controlle
             ReadTime = command.ReadTime
         };
     
-        await blogPostRepository.CreateAsync(blogPost);
-        return NoContent();
+        var id = await blogPostRepository.CreateAsync(blogPost);
+        return Ok(id);
     }
     
     [HttpPut("id")]
@@ -78,7 +76,7 @@ public class BlogAdminController(IBlogRepository blogPostRepository) : Controlle
             ReadTime = command.ReadTime
         };
     
-        await blogPostRepository.CreateAsync(blogPost);
+        await blogPostRepository.UpdateAsync(blogPost);
         return NoContent();
     }
 }

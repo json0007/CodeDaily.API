@@ -34,8 +34,9 @@ public class Startup
 
         ConfigureAuthentication(services);
         services.AddAuthorization();
-        
+
         services.AddScoped<IBlogRepository, DynamoDbBlogRepository>();
+        services.AddScoped<IUserRepository, DynamoDbUserRepository>();
         services.AddScoped<AuthService>();
     }
 

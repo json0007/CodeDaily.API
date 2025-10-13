@@ -94,7 +94,7 @@ public class DynamoDbBlogRepository(IDynamoDBContext dynamoDbContext) : IBlogRep
     /// <summary>
     /// Create a new blog post
     /// </summary>
-    public async Task CreateAsync(Blog blogPost, CancellationToken cancellationToken = default)
+    public async Task<string> CreateAsync(Blog blogPost, CancellationToken cancellationToken = default)
     {
         var existingBlog = await GetBySlugAsync(blogPost.Slug, cancellationToken);
 
@@ -136,6 +136,7 @@ public class DynamoDbBlogRepository(IDynamoDBContext dynamoDbContext) : IBlogRep
         };
 
         await dynamoDbContext.SaveAsync(dynamoDbBlog, cancellationToken);
+        return dynamoDbBlog.PK;
     }
 
     /// <summary>

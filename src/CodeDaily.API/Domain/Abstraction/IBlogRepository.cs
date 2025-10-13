@@ -9,7 +9,7 @@ public interface IBlogRepository
     Task<Blog?> GetByIdAsync(string id, CancellationToken cancellationToken = default);
     Task<Blog?> GetBySlugAsync(string slug, CancellationToken cancellationToken = default);
     Task<List<BlogMetadata>> GetByStatusAsync(string status, CancellationToken cancellationToken = default);
-    Task CreateAsync(Blog blogPost, CancellationToken cancellationToken = default);
+    Task<string> CreateAsync(Blog blogPost, CancellationToken cancellationToken = default);
     Task UpdateAsync(Blog blogPost, CancellationToken cancellationToken = default);
     Task DeleteAsync(string id, CancellationToken cancellationToken = default);
 }

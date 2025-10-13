@@ -1,8 +1,6 @@
 using Amazon.SimpleSystemsManagement;
 using Amazon.SimpleSystemsManagement.Model;
-using CodeDaily.API.Domain.Abstraction;
 using CodeDaily.API.Features.Auth;
-using CodeDaily.API.Infrastructure.Db.Repositories;
 
 namespace CodeDaily.API;
 
@@ -37,9 +35,6 @@ public class LambdaEntryPoint :
         builder
             .ConfigureServices(services =>
             {
-                // Use DynamoDB user repository for production
-                services.AddScoped<IUserRepository, DynamoDbUserRepository>();
-
                 // Configure JWT from SSM Parameter Store for Lambda
                 var jwtConfig = GetJwtConfigurationFromSsm().GetAwaiter().GetResult();
                 services.AddSingleton(jwtConfig);
