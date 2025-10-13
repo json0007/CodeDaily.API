@@ -153,50 +153,7 @@ resource "aws_iam_role" "lambda_role" {
   }
 }
 
-# SSM Parameters for JWT Configuration
-resource "aws_ssm_parameter" "jwt_private_key" {
-  name  = "/codedaily/jwt/private-key"
-  type  = "SecureString"
-  value = "placeholder-private-key"
-
-  lifecycle {
-    ignore_changes = [value]
-  }
-
-  tags = {
-    Project = "CodeDaily"
-  }
-}
-
-resource "aws_ssm_parameter" "jwt_public_key" {
-  name  = "/codedaily/jwt/public-key"
-  type  = "SecureString"
-  value = "placeholder-public-key"
-
-  lifecycle {
-    ignore_changes = [value]
-  }
-
-  tags = {
-    Project = "CodeDaily"
-  }
-}
-
-resource "aws_ssm_parameter" "jwt_expiration" {
-  name  = "/codedaily/jwt/expiration"
-  type  = "String"
-  value = "3600"
-
-  lifecycle {
-    ignore_changes = [value]
-  }
-
-  tags = {
-    Project = "CodeDaily"
-  }
-}
-
-# IAM Policy for DynamoDB and S3 access
+# IAM Policy for DynamoDB, S3, and SSM access
 resource "aws_iam_policy" "lambda_policy" {
   name = "codedaily-api-lambda-policy"
 
@@ -240,11 +197,7 @@ resource "aws_iam_policy" "lambda_policy" {
           "ssm:GetParameter",
           "ssm:GetParameters"
         ]
-        Resource = [
-          aws_ssm_parameter.jwt_private_key.arn,
-          aws_ssm_parameter.jwt_public_key.arn,
-          aws_ssm_parameter.jwt_expiration.arn
-        ]
+        Resource = "arn:aws:ssm:us-east-2:042445847276:parameter/codedaily/jwt/*"
       }
     ]
   })

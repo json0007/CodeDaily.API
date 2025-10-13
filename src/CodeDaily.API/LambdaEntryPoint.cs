@@ -1,4 +1,7 @@
+using Amazon.SimpleSystemsManagement;
+using Amazon.SimpleSystemsManagement.Model;
 using CodeDaily.API.Domain.Abstraction;
+using CodeDaily.API.Features.Auth;
 using CodeDaily.API.Infrastructure.Db.Repositories;
 
 namespace CodeDaily.API;
@@ -36,8 +39,44 @@ public class LambdaEntryPoint :
             {
                 // Use DynamoDB user repository for production
                 services.AddScoped<IUserRepository, DynamoDbUserRepository>();
+
+                // Configure JWT from SSM Parameter Store for Lambda
+                var jwtConfig = GetJwtConfigurationFromSsm().GetAwaiter().GetResult();
+                services.AddSingleton(jwtConfig);
             })
             .UseStartup<Startup>();
+    }
+
+    private async Task<JwtConfiguration> GetJwtConfigurationFromSsm()
+    {
+        using var ssmClient = new AmazonSimpleSystemsManagementClient();
+
+        var request = new GetParametersRequest
+        {
+            Names = new List<string>
+            {
+                "/codedaily/jwt/private-key",
+                "/codedaily/jwt/public-key",
+                "/codedaily/jwt/expiration"
+            },
+            WithDecryption = true
+        };
+
+        var response = await ssmClient.GetParametersAsync(request);
+
+        var privateKey = response.Parameters.FirstOrDefault(p => p.Name == "/codedaily/jwt/private-key")?.Value
+            ?? throw new InvalidOperationException("JWT private-key not found in SSM Parameter Store");
+        var publicKey = response.Parameters.FirstOrDefault(p => p.Name == "/codedaily/jwt/public-key")?.Value
+            ?? throw new InvalidOperationException("JWT public-key not found in SSM Parameter Store");
+        var expirationStr = response.Parameters.FirstOrDefault(p => p.Name == "/codedaily/jwt/expiration")?.Value
+            ?? throw new InvalidOperationException("JWT expiration not found in SSM Parameter Store");
+
+        if (!int.TryParse(expirationStr, out var expirationMinutes) || expirationMinutes <= 0)
+        {
+            throw new InvalidOperationException("JWT expiration must be a positive integer representing minutes.");
+        }
+
+        return new JwtConfiguration(privateKey, publicKey, expirationMinutes);
     }
 
     /// <summary>

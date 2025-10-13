@@ -1,4 +1,5 @@
 ﻿using CodeDaily.API.Domain.Abstraction;
+using CodeDaily.API.Features.Auth;
 using CodeDaily.API.Infrastructure.Db.Repositories;
 using Microsoft.OpenApi.Models;
 
@@ -59,6 +60,20 @@ public class LocalEntryPoint
 
                 // Use in-memory user repository for local development
                 services.AddScoped<IUserRepository, InMemoryUserRepository>();
+
+                // Configure JWT from appsettings.json for local development
+                var jwtSection = context.Configuration.GetSection("Jwt");
+                var privateKey = jwtSection["PrivateKey"] ?? throw new InvalidOperationException("JWT PrivateKey is not configured");
+                var publicKey = jwtSection["PublicKey"] ?? throw new InvalidOperationException("JWT PublicKey is not configured");
+                var expiration = jwtSection["Expiration"] ?? throw new InvalidOperationException("JWT Expiration is not configured");
+
+                if (!int.TryParse(expiration, out var expirationMinutes) || expirationMinutes <= 0)
+                {
+                    throw new InvalidOperationException("JWT Expiration must be a positive integer representing minutes.");
+                }
+
+                var jwtConfig = new JwtConfiguration(privateKey, publicKey, expirationMinutes);
+                services.AddSingleton(jwtConfig);
             })
             .ConfigureWebHostDefaults(webBuilder =>
             {

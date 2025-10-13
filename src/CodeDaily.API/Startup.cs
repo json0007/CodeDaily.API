@@ -10,7 +10,7 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace CodeDaily.API;
 
-public class Startup(IConfiguration configuration)
+public class Startup
 {
     // This method gets called by the runtime. Use this method to add services to the container
     public void ConfigureServices(IServiceCollection services)
@@ -41,20 +41,11 @@ public class Startup(IConfiguration configuration)
 
     private void ConfigureAuthentication(IServiceCollection services)
     {
-        var jwtSection = configuration.GetSection("Jwt");
+        // JWT configuration is now set up in LocalEntryPoint (from appsettings.json)
+        // or LambdaEntryPoint (from SSM Parameter Store)
+        var serviceProvider = services.BuildServiceProvider();
+        var jwtConfig = serviceProvider.GetRequiredService<JwtConfiguration>();
 
-        var privateKey = jwtSection["PrivateKey"] ?? throw new InvalidOperationException("JWT PrivateKey is not configured");
-        var publicKey = jwtSection["PublicKey"] ?? throw new InvalidOperationException("JWT PublicKey is not configured");
-        var expiration = jwtSection["Expiration"] ?? throw new InvalidOperationException("JWT Expiration is not configured");
-        
-        if (!int.TryParse(expiration, out var expirationMinutes) || expirationMinutes <= 0)
-        {
-            throw new InvalidOperationException("JWT Expiration must be a positive integer representing minutes.");
-        }
-
-        var jwtConfig = new JwtConfiguration(privateKey, publicKey, expirationMinutes);
-        services.AddSingleton(jwtConfig);
-        
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
