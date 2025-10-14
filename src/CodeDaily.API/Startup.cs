@@ -60,21 +60,7 @@ public class Startup
                     ClockSkew = TimeSpan.Zero
                 };
             
-                options.Events = new JwtBearerEvents
-                {
-                    OnChallenge = context =>
-                    {
-                        context.HandleResponse();
-                        context.Response.StatusCode = 404;
-                        return Task.CompletedTask;
-                    },
-                
-                    OnForbidden = context =>
-                    {
-                        context.Response.StatusCode = 404;
-                        return Task.CompletedTask;
-                    }
-                };
+            
             });
 
     }
