@@ -70,13 +70,6 @@ jobs:
         working-directory: terraform
         run: terraform init
 
-      - name: Remove SSM parameters from state
-        working-directory: terraform
-        run: |
-          terraform state rm aws_ssm_parameter.jwt_private_key || true
-          terraform state rm aws_ssm_parameter.jwt_public_key || true
-          terraform state rm aws_ssm_parameter.jwt_expiration || true
-
       - name: Terraform Plan
         working-directory: terraform
         run: terraform plan
